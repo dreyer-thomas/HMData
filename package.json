@@ -4,11 +4,17 @@
   "description": "Homematic Data Logger based on SQLite DB",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app"
   },
   "author": "Thomas Dreyer",
   "license": "MIT",
   "dependencies": {
-    "sqlite3": "^4.1.1"
+    "homematic-js-rpc": "^1.0.0",
+    "homematic-xmlrpc": "^1.0.2",
+    "sqlite3": "^4.1.1",
+    "xml2js": "^0.4.23",
+    "xmlrpc": "^1.3.2",
+    "xmlrpc-multicall": "0.0.1"
   }
 }
