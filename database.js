@@ -28,6 +28,71 @@ db.run("CREATE TABLE IF NOT EXISTS ACTUAL_VALUES (\
             TIME TEXT \
         )");
 
+db.run("CREATE TABLE IF NOT EXISTS MEASUREMENTS (\
+            CHANNEL TEXT,\
+            MEASUREMENT TEXT,\
+            VALUE_TYPE TEXT\
+        )");
+
+module.exports.insertMeasurment = function(channel, measurement, type) {
+    stmt = db.prepare('REPLACE INTO MEASUREMENTS (CHANNEL, MEASUREMENT, VALUE_TYPE) VALUES(?,?,?)');
+    stmt.run(channel,measurement,type);
+    stmt.finalize();
+}
+
+module.exports.deleteMeasurement = function(id) {
+    stmt = db.prepare('DELETE FROM MEASUREMENTS WHERE ROWID=?');
+    stmt.run(id);
+    stmt.finalize();
+}
+
+module.exports.getMeasurment = function(id) {
+    return new Promise((resolve,reject) => {
+        stmt = db.get("SELECT CHANNEL, MEASUREMENT, VALUE_TYPE FROM MEASUREMENTS WHERE ROWID=?",id, (err, row) => {
+            if (err) {
+                console.log(err);
+                return reject(new Error("Error reading measurement list from database"));
+            }
+            else if (row) {
+                measurement = {
+                    id: id, 
+                    channel: row.CHANNEL, 
+                    measurement: row.MEASUREMENT,
+                    value_type: row.VALUE_TYPE
+                };
+                return resolve(measurement);
+            }
+            else {
+                console.log('no data found');
+                return reject(new Error("No data fount for measurement "+id));
+            }
+        });
+    })
+}
+
+module.exports.getMeasurements = function() {
+    return new Promise((resolve,reject) => {
+        var measurements = [];
+        stmt = db.all("SELECT CHANNEL, MEASUREMENT, VALUE_TYPE, ROWID FROM MEASUREMENTS", (err, rows) => {
+            if (err) {
+                console.log(err);
+                return reject(new Error("Error reading measurement list from database"));
+            }
+            else{
+                for (i=0; i<rows.length; i++) {
+                    measurements.push({
+                        id: rows[i].rowid, 
+                        channel: rows[i].CHANNEL, 
+                        measurement: rows[i].MEASUREMENT,
+                        value_type: rows[i].VALUE_TYPE
+                    });
+                }
+                return resolve(measurements);
+            }
+        });
+    })
+}
+
 module.exports.handleNewDevices = function(err,params) {
     for (i=0; i<params[1].length; i++) {
         element = params[1][i];
@@ -183,12 +248,14 @@ module.exports.getDataFromChannel = function(channelID, measurement, tstart, ten
     return new Promise((resolve,reject) => {
         var data = {
             channel: channelID,
+            channel_name: '',
+            device: '',
             measurement: measurement,
             from: tstart,
             to: tend,
             values : []
         };
-        stmt = db.get("SELECT CHANNELID FROM CHANNELS where ROWID=?",channelID, (err,rows) => {
+        stmt = db.get("SELECT CHANNELID, NAME, DEVICEID FROM CHANNELS where ROWID=?",channelID, (err,rows) => {
             if (err) {
                 console.log(err);
                 reject(new Error("Error reading channel"));
@@ -198,6 +265,8 @@ module.exports.getDataFromChannel = function(channelID, measurement, tstart, ten
                 reject(new Error("No data found for "+channelID));
             }
             else {
+                data.channel_name = rows.NAME;
+                data.device = rows.DEVICEID;
                 channel = rows.CHANNELID;
                 if (!tstart) {tstart='1970-01-01T00:00:00';}
                 if (!tend) {tend='31.12.2100T00:00:00';}
@@ -208,7 +277,6 @@ module.exports.getDataFromChannel = function(channelID, measurement, tstart, ten
                         reject(new Error("Error reading values for channel " + channel));
                     }
                     else {
-                        console.log(datapoints);
                         for (i=0; i<datapoints.length; i++) {
                             data.values.push( {
                                 time: datapoints[i].TIME, 

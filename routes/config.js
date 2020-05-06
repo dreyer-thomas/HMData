@@ -68,6 +68,41 @@ configRouter.route('/channels')
     res.end('path /config/channels coming soon');
 });
 
+configRouter.route('/measurements')
+.get( (req,res,next) => {
+    database.getMeasurements()
+    .then( (measurements) => {
+        res.setHeader('Content-Type','application/json');
+        res.statusCode = 200;
+        res.json(measurements);
+    })
+})
+.post( (req,res,next) => {
+    database.insertMeasurment(req.body.channel, req.body.measurement, req.body.type);
+    res.statusCode = 200;
+    res.end('Measurement '+req.body.channel+'/'+req.body.measurement+' set to '+req.body.type);
+});
 
+configRouter.route('/measurements/:id')
+.get( (req,res,next) => {
+    database.getMeasurment(req.params.id)
+    .then( (measurement) => {
+        res.setHeader('Content-Type','application/json');
+        res.statusCode = 200;
+        res.json(measurement);
+    })
+    .catch( (err) => {
+        res.setHeader('Content-Type','application/json');
+        res.statusCode = 500;
+        res.json(err);
+    })
+
+})
+.delete( (req,res,next) => {
+    database.deleteMeasurement(req.params.id);
+    res.setHeader('Content-Type','application/json');
+    res.statusCode = 200;
+    res.end("{statusCode: 200, result:'deleted'}");
+});
 
 module.exports = configRouter;
