@@ -188,11 +188,13 @@ module.exports.getDevices = function() {
     })
 }
 
+
+
 module.exports.getDevice = function(deviceId) {
     return new Promise((resolve,reject) => {
         var device = {};
         stmt = db.get("SELECT NAME, DEVICEID, DEVICETYPE FROM DEVICES WHERE ROWID=?",deviceId, (err,devices) => {
-            if (err) { 
+            if (err || !devices) { 
                 console.log("Error select from devices: " + err);
                 return reject(new Error("Error reading device from devices"));
             }
@@ -206,6 +208,7 @@ module.exports.getDevice = function(deviceId) {
                     console.log("Error select from channels: " + err2);
                     return reject(new Error("Error reading channel list for device"));
                 }
+                var channelCounter = channels.length;
                 for (i=0; i<channels.length; i++) {
                     var channel = {
                         id : channels[i].rowid,
@@ -218,7 +221,6 @@ module.exports.getDevice = function(deviceId) {
                             console.log("Error selecting distinct from actual_values: " + err3);
                             return reject(new Error("Error reading distinct measurements from actual values"));
                         }
-                        console.log(measurements);
                         for (j=0; j<measurements.length; j++) {
                             var value = {
                                 value: measurements[j].MEASUREMENT, 
@@ -231,7 +233,8 @@ module.exports.getDevice = function(deviceId) {
                                 }
                             }
                         }
-                        if (i==channels.length) {
+                        channelCounter -= 1;
+                        if (channelCounter <= 0) {
                             // now finished, return object
                             return resolve(device);
                         }
@@ -278,10 +281,7 @@ module.exports.getDataFromChannel = function(channelID, measurement, tstart, ten
                     }
                     else {
                         for (i=0; i<datapoints.length; i++) {
-                            data.values.push( {
-                                time: datapoints[i].TIME, 
-                                value: datapoints[i].VALUE
-                            });
+                            data.values.push( datapoints[i].VALUE );
                         }
                         return resolve(data);
                     }

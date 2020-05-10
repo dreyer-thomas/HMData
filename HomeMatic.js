@@ -53,7 +53,7 @@ module.exports = class HomeMaticCCU {
               console.log("error " + err);
           }
           else {
-              console.log('callback registered');
+              console.log('callback registered at '+serveraddress+':'+serverport);
           }
       });
 
