@@ -281,7 +281,10 @@ module.exports.getDataFromChannel = function(channelID, measurement, tstart, ten
                     }
                     else {
                         for (i=0; i<datapoints.length; i++) {
-                            data.values.push( datapoints[i].VALUE );
+                            data.values.push( {
+                                time: datapoints[i].TIME,
+                                value: datapoints[i].VALUE
+                             });
                         }
                         return resolve(data);
                     }
