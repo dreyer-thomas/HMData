@@ -274,7 +274,7 @@ module.exports.getDataFromChannel = function(channelID, measurement, tstart, ten
                 if (!tstart) {tstart='1970-01-01T00:00:00';}
                 if (!tend) {tend='31.12.2100T00:00:00';}
                 console.log('search for channel='+channel+' and measurement='+measurement + ' with Start='+tstart+' and end='+tend);
-                stmt2 = db.all("SELECT VALUE, DATETIME(TIME) AS TIME FROM ACTUAL_VALUES WHERE CHANNEL=? AND MEASUREMENT=? AND TIME >= ? AND TIME <? ORDER BY TIME",channel, measurement, tstart, tend, (err2,datapoints) => {
+                stmt2 = db.all("SELECT VALUE, DATETIME(TIME) AS VALUE_TIME, TIME as TIME FROM ACTUAL_VALUES WHERE CHANNEL=? AND MEASUREMENT=? AND VALUE_TIME >= ? AND VALUE_TIME <? ORDER BY VALUE_TIME",channel, measurement, tstart, tend, (err2,datapoints) => {
                     if (err2) {
                         console.log(err2);
                         reject(new Error("Error reading values for channel " + channel));
