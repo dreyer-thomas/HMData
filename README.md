@@ -1,0 +1,2 @@
+# HMData
+Homematic Data Recorder
