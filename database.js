@@ -294,6 +294,52 @@ module.exports.getDataFromChannel = function(channelID, measurement, tstart, ten
     })
 }
 
+module.exports.getDataFromChannel24h = function(channelID, measurement, tend) {
+    return new Promise((resolve,reject) => {
+        var data = {
+            channel: channelID,
+            channel_name: '',
+            device: '',
+            measurement: measurement,
+            from: tend - 3600 * 24,
+            to: tend,
+            values : []
+        };
+        stmt = db.get("SELECT CHANNELID, NAME, DEVICEID FROM CHANNELS where ROWID=?",channelID, (err,rows) => {
+            if (err) {
+                console.log(err);
+                reject(new Error("Error reading channel"));
+            }
+            else if (!rows) {
+                console.log('Nothing found for '+ channelID);
+                reject(new Error("No data found for "+channelID));
+            }
+            else {
+                data.channel_name = rows.NAME;
+                data.device = rows.DEVICEID;
+                channel = rows.CHANNELID;
+                if (!tstart) {tstart='1970-01-01T00:00:00';}
+                if (!tend) {tend='31.12.2100T00:00:00';}
+                console.log('search for channel='+channel+' and measurement='+measurement + ' with Start='+tstart+' and end='+tend);
+                stmt2 = db.all("SELECT VALUE, strftime('%H:%M',TIME) FROM ACTUAL_VALUES WHERE CHANNEL=? AND MEASUREMENT=? AND TIME >= ? AND TIME <? ORDER BY TIME",channel, measurement, tend - 3600 * 24, tend, (err2,datapoints) => {
+                    if (err2) {
+                        console.log(err2);
+                        reject(new Error("Error reading values for channel " + channel));
+                    }
+                    else {
+                        for (i=0; i<datapoints.length; i++) {
+                            data.values.push( {
+                                time: datapoints[i].TIME,
+                                value: datapoints[i].VALUE
+                             });
+                        }
+                        return resolve(data);
+                    }
+                })
+            }
+        })
+    })
+}
 
 /*
 // check db status
